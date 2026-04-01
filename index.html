@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我看見妳的不一樣：學習障礙互動挑戰賽</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --base-font-size: 18px; }
+        body { font-size: var(--base-font-size); transition: font-size 0.2s ease; }
+        .option-card { transition: all 0.2s ease; }
+        .option-card:hover:not(.disabled) { transform: scale(1.01); }
+        .selected-option { border-color: #f59e0b !important; background-color: #fffbeb !important; box-shadow: 0 0 0 2px #f59e0b; }
+        .team-badge { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    </style>
+</head>
+<body class="bg-indigo-50 min-h-screen text-slate-800 font-sans pb-10">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b-2 border-indigo-100 p-4 sticky top-0 flex justify-between items-center z-40">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
+                <i class="fas fa-eye text-lg"></i>
+            </div>
+            <h1 class="text-xl font-black text-indigo-900 tracking-tight">我看見妳的不一樣：挑戰賽</h1>
+        </div>
+        <div class="flex gap-2">
+            <button id="scoreBoardBtn" class="bg-amber-100 text-amber-700 px-3 py-2 rounded-full hover:bg-amber-200 transition font-bold flex items-center gap-2">
+                <i class="fas fa-award"></i> 積分榜
+            </button>
+            <button id="settingsBtn" class="bg-slate-100 text-slate-600 w-10 h-10 rounded-full hover:bg-slate-200 transition">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 md:p-6">
+        <!-- Progress Bar -->
+        <div class="mb-6">
+            <div class="flex justify-between items-end mb-3">
+                <div class="bg-white px-4 py-1 rounded-full shadow-sm border border-slate-200 text-sm font-bold text-indigo-500">
+                    進度：<span id="progressText">第 1 / 12 題</span>
+                </div>
+                <div class="flex gap-2" id="teamQuickView">
+                    <!-- Quick scores here -->
+                </div>
+            </div>
+            <div class="bg-slate-200 rounded-full h-3 overflow-hidden shadow-inner p-0.5">
+                <div id="progressBar" class="bg-gradient-to-r from-indigo-400 to-indigo-600 h-2 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Quiz Main Container -->
+        <div id="quizContainer" class="bg-white rounded-3xl shadow-xl p-6 md:p-10 border border-indigo-100">
+            <div id="questionArea">
+                <div class="flex justify-between items-start mb-8">
+                    <h2 id="questionText" class="text-2xl md:text-3xl font-black text-slate-800 leading-snug">
+                        載入題目中...
+                    </h2>
+                    <button onclick="speakText('question')" class="shrink-0 ml-4 bg-indigo-50 text-indigo-600 w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-indigo-100 transition-all active:scale-90 shadow-sm">
+                        <i class="fas fa-volume-up text-2xl"></i>
+                    </button>
+                </div>
+
+                <div id="optionsArea" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Options injected here -->
+                </div>
+
+                <!-- Reveal Button -->
+                <div id="revealBtnContainer" class="mt-10 flex justify-center hidden">
+                    <button id="revealBtn" class="bg-amber-500 text-white px-16 py-5 rounded-2xl font-black text-2xl hover:bg-amber-600 shadow-lg transition-all animate-bounce">
+                        <i class="fas fa-bullhorn mr-2"></i> 公布答案
+                    </button>
+                </div>
+
+                <!-- Feedback & Scoring -->
+                <div id="feedbackArea" class="mt-8 p-6 rounded-2xl hidden border-4 bg-white transition-all">
+                    <div class="flex items-start gap-4 mb-6">
+                        <div id="feedbackIcon" class="text-5xl"></div>
+                        <div>
+                            <p id="feedbackTitle" class="font-black text-2xl mb-1"></p>
+                            <p id="feedbackText" class="text-slate-500 font-medium"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Reward Points System -->
+                    <div class="pt-6 border-t-2 border-slate-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-xs font-black text-slate-400 uppercase tracking-widest">🏆 給予小組互動加分</span>
+                            <button onclick="addPoint('all')" class="bg-purple-600 text-white px-4 py-1 rounded-full text-xs font-black hover:bg-purple-700 shadow-md active:scale-95">
+                                <i class="fas fa-stars mr-1"></i> 全組加分
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2">
+                            <button onclick="addPoint(0)" class="bg-rose-50 text-rose-600 py-3 rounded-xl font-black hover:bg-rose-100 border-2 border-transparent hover:border-rose-200 transition-all">第1組</button>
+                            <button onclick="addPoint(1)" class="bg-cyan-50 text-cyan-600 py-3 rounded-xl font-black hover:bg-cyan-100 border-2 border-transparent hover:border-cyan-200 transition-all">第2組</button>
+                            <button onclick="addPoint(2)" class="bg-emerald-50 text-emerald-600 py-3 rounded-xl font-black hover:bg-emerald-100 border-2 border-transparent hover:border-emerald-200 transition-all">第3組</button>
+                            <button onclick="addPoint(3)" class="bg-amber-50 text-amber-600 py-3 rounded-xl font-black hover:bg-amber-100 border-2 border-transparent hover:border-amber-200 transition-all">第4組</button>
+                            <button onclick="addPoint(4)" class="bg-violet-50 text-violet-600 py-3 rounded-xl font-black hover:bg-violet-100 border-2 border-transparent hover:border-violet-200 transition-all">第5組</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 flex justify-center">
+                    <button id="nextBtn" class="bg-slate-900 text-white px-14 py-4 rounded-2xl font-black text-xl hover:bg-black shadow-lg transition-all hidden">
+                        下一題 <i class="fas fa-chevron-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center opacity-0 invisible z-50 p-4 transition-all">
+        <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl border border-indigo-50">
+            <h3 class="text-2xl font-black mb-8 text-slate-900">環境與語音設定</h3>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase">選擇語音風格</label>
+                    <select id="voiceSelect" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-3 outline-none focus:border-indigo-400 font-bold"></select>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-2"><label class="text-xs font-black text-slate-400 uppercase">報讀語速</label><span id="rateValue" class="text-indigo-600 font-black">1.0x</span></div>
+                    <input type="range" id="rateRange" min="0.5" max="2" step="0.1" value="1" class="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                </div>
+                <div>
+                    <div class="flex justify-between mb-2"><label class="text-xs font-black text-slate-400 uppercase">整體字體</label><span id="fontSizeValue" class="text-indigo-600 font-black">100%</span></div>
+                    <input type="range" id="fontSizeRange" min="16" max="32" step="1" value="18" class="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                </div>
+            </div>
+            <button onclick="toggleModal('settingsModal', false)" class="w-full mt-10 bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-xl transition-all">確定</button>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="scoreModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center opacity-0 invisible z-50 p-4 transition-all">
+        <div class="bg-white rounded-3xl w-full max-w-xl p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+            <h3 class="text-3xl font-black text-center mb-10 text-slate-900">🏆 班級最終積分榜</h3>
+            <div id="finalScoreList" class="space-y-3"></div>
+            <div class="mt-10 flex gap-4">
+                <button onclick="location.reload()" class="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-black hover:bg-slate-200">重新開始</button>
+                <button onclick="toggleModal('scoreModal', false)" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-lg">繼續觀看</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Questions: 0-4 Video (Girl), 5-11 PDF/Ext
+        const rawQuestions = [
+            { q: "在影片《我好喜歡你》中，女主角看書時文字像在做什麼？", a: ["跳舞或游泳", "排隊站好", "變大變小", "閃閃發光"], c: 0, ex: "學障者閱讀時文字常會跳動或次序顛倒，讓他們難以理解文章。" },
+            { q: "影片中的小女孩雖然學習有困難，但她其實擁有什麼特質？", a: ["很聰明且努力", "懶惰不想讀書", "故意不寫作業", "沒有任何才華"], c: 0, ex: "許多學障學生智力正常甚至優異，只是大腦訊息處理功能不佳。" },
+            { q: "當影片中的老師看見女孩的困難後，採取了什麼樣的態度？", a: ["耐心引導與鼓勵", "大聲責備她偷懶", "請她離開教室", "不理會她的情況"], c: 0, ex: "老師發現了她的不一樣並給予支持，這是最好的協助方式。" },
+            { q: "影片傳達的主題是，當我們發現同學的學習「不一樣」時？", a: ["應尊重並看見優點", "應嘲笑她的速度", "應遠離不跟她玩", "應要求她變一樣"], c: 0, ex: "每個人都有不同的光芒，看見並尊重差異是融合教育的核心。" },
+            { q: "若你想幫助像影片中的女孩，下列哪種方式最溫暖？", a: ["多給她一點時間", "笑她字寫得太慢", "幫她把答案寫完", "假裝她不存在"], c: 0, ex: "耐心陪伴並給予充足的時間，是學障生最需要的支援。" },
+            { q: "手冊提到學障生「常有聽沒有懂」，是因為什麼能力差？", a: ["視聽區辨能力", "體力與運動力", "胃口與食慾", "長高發育能力"], c: 0, ex: "學障生因視、聽區辨能力較弱，常難以察覺別人的情緒或指令。" },
+            { q: "閱讀有困難的同學，朗讀文章時常會出現哪種現象？", a: ["省略、贅字或顛倒", "背得滾瓜爛熟", "聲音小到聽不見", "倒著念卻很流利"], c: 0, ex: "閱讀障礙包含省略、贅字、替換文字或念錯字等問題。" },
+            { q: "書寫有困難的學生，寫出來的字體常見什麼樣的錯誤？", a: ["左右或上下顛倒", "像藝術字般美麗", "顏色全部畫反", "字體非常微小"], c: 0, ex: "因手眼協調與空間感障礙，常出現鏡像字或比例錯誤。" },
+            { q: "數學學障生在面對數字時，最常遇到的挑戰是什麼？", a: ["序列與順序概念", "計算速度超快", "對顏色辨識不清", "心算非常準確"], c: 0, ex: "他們對數字相關符號的辨識、空間及順序概念常感到頭大。" },
+            { q: "當我們對學障生下指令時，最理想的方式是？", a: ["給予簡短的指令", "講一大串詳細規則", "用喊叫的方式說", "完全不給任何指令"], c: 0, ex: "因訊息處理速度較慢，簡短明確的指令能讓他們更容易執行。" },
+            { q: "理解長篇文章時，提供什麼樣的提示對學障生最有用？", a: ["關鍵字提示", "更多的空白紙張", "一整篇英文翻譯", "所有的生字清單"], c: 0, ex: "掌握關鍵字能幫他們快速連結文章內容與重點。" },
+            { q: "學障生表達能力偏弱，並不是因為他不懂，而是？", a: ["需要比常人更多精力", "他故意不肯開口", "他根本沒有學習", "他不想交好朋友"], c: 0, ex: "他們內心也渴望友誼與表達，但需要花更多精力才能將所學說出。" }
+        ];
+
+        let quizItems = [];
+        let currentIdx = 0;
+        let selectedIdx = null;
+        let scores = [0, 0, 0, 0, 0];
+        let pref = { voice: null, rate: 1.0, font: 18 };
+
+        function initQuiz() {
+            // Process all questions: Randomize options, keep track of correct one
+            const processed = rawQuestions.map(item => {
+                const opts = [...item.a];
+                const correctT = opts[item.c];
+                // Shuffle
+                for (let i = opts.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [opts[i], opts[j]] = [opts[j], opts[i]];
+                }
+                return { q: item.q, a: opts, c: opts.indexOf(correctT), ex: item.ex };
+            });
+
+            // Split and Sort: First 5 (Video) randomized, then rest randomized
+            const vQs = processed.slice(0, 5).sort(() => Math.random() - 0.5);
+            const oQs = processed.slice(5).sort(() => Math.random() - 0.5);
+            quizItems = [...vQs, ...oQs];
+            render();
+        }
+
+        const synth = window.speechSynthesis;
+        function loadVoices() {
+            const v = synth.getVoices().filter(voice => voice.lang.includes('zh'));
+            const sel = document.getElementById('voiceSelect');
+            sel.innerHTML = v.map((voice, i) => `<option value="${i}">${voice.name}</option>`).join('');
+            const def = v.find(voice => voice.name.includes('Google') || voice.name.includes('Microsoft'));
+            if (def) pref.voice = def;
+        }
+        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
+
+        function speakText(type, idx = null) {
+            synth.cancel();
+            const text = type === 'question' ? quizItems[currentIdx].q : quizItems[currentIdx].a[idx];
+            const u = new SpeechSynthesisUtterance(text);
+            u.voice = pref.voice;
+            u.rate = pref.rate;
+            u.lang = 'zh-TW';
+            synth.speak(u);
+        }
+
+        function toggleModal(id, show) {
+            const m = document.getElementById(id);
+            if (show) {
+                m.classList.remove('invisible', 'opacity-0');
+                if (id === 'scoreModal') updateFinal();
+            } else { m.classList.add('invisible', 'opacity-0'); }
+        }
+
+        document.getElementById('settingsBtn').onclick = () => toggleModal('settingsModal', true);
+        document.getElementById('scoreBoardBtn').onclick = () => toggleModal('scoreModal', true);
+
+        document.getElementById('rateRange').oninput = (e) => {
+            pref.rate = parseFloat(e.target.value);
+            document.getElementById('rateValue').innerText = pref.rate.toFixed(1) + 'x';
+        };
+
+        document.getElementById('fontSizeRange').oninput = (e) => {
+            pref.font = parseInt(e.target.value);
+            document.documentElement.style.setProperty('--base-font-size', pref.font + 'px');
+            document.getElementById('fontSizeValue').innerText = Math.round((pref.font / 18) * 100) + '%';
+        };
+
+        function addPoint(team) {
+            let label = "";
+            if (team === 'all') {
+                scores = scores.map(s => s + 10);
+                label = " (全組 +10)";
+            } else {
+                scores[team] += 10;
+                label = ` (第${team+1}組 +10)`;
+            }
+            updateQuick();
+            const ft = document.getElementById('feedbackTitle');
+            const bonus = document.createElement('span');
+            bonus.className = "text-indigo-500 animate-pulse ml-3 text-sm italic font-black";
+            bonus.innerText = label;
+            ft.appendChild(bonus);
+            setTimeout(() => bonus.remove(), 2500);
+        }
+
+        function updateQuick() {
+            const qv = document.getElementById('teamQuickView');
+            const clrs = ['bg-rose-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500'];
+            qv.innerHTML = scores.map((s, i) => `
+                <div class="team-badge ${clrs[i]} text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm">
+                    G${i+1}: ${s}
+                </div>
+            `).join('');
+        }
+
+        function updateFinal() {
+            const fl = document.getElementById('finalScoreList');
+            const clrs = ['text-rose-600', 'text-cyan-600', 'text-emerald-600', 'text-amber-600', 'text-violet-600'];
+            fl.innerHTML = scores.map((s, i) => `
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 shadow-sm">
+                    <span class="font-black text-lg ${clrs[i]}">第 ${i+1} 小組</span>
+                    <span class="font-black text-3xl text-slate-800 tracking-tighter">${s} 分</span>
+                </div>
+            `).join('');
+        }
+
+        function render() {
+            selectedIdx = null;
+            const q = quizItems[currentIdx];
+            const lbls = ['A', 'B', 'C', 'D'];
+            const p = (currentIdx / quizItems.length) * 100;
+            
+            document.getElementById('progressBar').style.width = p + '%';
+            document.getElementById('progressText').innerText = `第 ${currentIdx + 1} / ${quizItems.length} 題`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const oa = document.getElementById('optionsArea');
+            oa.innerHTML = q.a.map((opt, idx) => `
+                <div onclick="selectOption(${idx})" class="option-card flex items-center justify-between p-5 border-2 border-slate-100 rounded-2xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 bg-white transition-all shadow-sm group">
+                    <div class="flex items-center gap-4">
+                        <span class="bg-slate-100 text-slate-500 w-10 h-10 flex items-center justify-center rounded-xl font-black group-hover:bg-indigo-600 group-hover:text-white transition-colors">${lbls[idx]}</span>
+                        <span class="font-bold text-slate-700">${opt}</span>
+                    </div>
+                    <button onclick="event.stopPropagation(); speakText('option', ${idx})" class="text-slate-300 hover:text-indigo-500 p-2"><i class="fas fa-volume-up text-xl"></i></button>
+                </div>
+            `).join('');
+
+            document.getElementById('revealBtnContainer').classList.add('hidden');
+            document.getElementById('feedbackArea').classList.add('hidden');
+            document.getElementById('nextBtn').classList.add('hidden');
+        }
+
+        function selectOption(idx) {
+            if (!document.getElementById('feedbackArea').classList.contains('hidden')) return;
+            selectedIdx = idx;
+            const cds = document.getElementById('optionsArea').children;
+            for (let i = 0; i < cds.length; i++) {
+                cds[i].classList.toggle('selected-option', i === idx);
+            }
+            document.getElementById('revealBtnContainer').classList.remove('hidden');
+        }
+
+        document.getElementById('revealBtn').onclick = () => {
+            if (selectedIdx === null) return;
+            document.getElementById('revealBtnContainer').classList.add('hidden');
+            revealAnswer(selectedIdx);
+        };
+
+        function revealAnswer(idx) {
+            const q = quizItems[currentIdx];
+            const cds = document.getElementById('optionsArea').children;
+            
+            for (let c of cds) {
+                c.classList.add('disabled');
+                c.classList.remove('hover:border-indigo-400', 'hover:bg-indigo-50/30', 'cursor-pointer');
+                c.onclick = null;
+            }
+
+            const fa = document.getElementById('feedbackArea');
+            const fi = document.getElementById('feedbackIcon');
+            const ft = document.getElementById('feedbackTitle');
+            const fx = document.getElementById('feedbackText');
+            
+            fa.classList.remove('hidden');
+
+            if (idx === q.c) {
+                cds[idx].classList.add('border-emerald-500', 'bg-emerald-50/50');
+                cds[idx].classList.remove('selected-option');
+                fa.className = "mt-8 p-6 rounded-2xl border-4 bg-white border-emerald-100 shadow-lg";
+                fi.innerHTML = "✨";
+                ft.innerText = "答對了！妳很仔細喔！";
+                ft.className = "font-black text-2xl text-emerald-700";
+                fx.innerText = q.ex;
+            } else {
+                cds[idx].classList.add('border-rose-400', 'bg-rose-50/50');
+                cds[idx].classList.remove('selected-option');
+                cds[q.c].classList.add('border-emerald-500', 'bg-emerald-50/30');
+                fa.className = "mt-8 p-6 rounded-2xl border-4 bg-white border-rose-100 shadow-lg";
+                fi.innerHTML = "💡";
+                ft.innerText = "正確答案是 " + ['A','B','C','D'][q.c];
+                ft.className = "font-black text-2xl text-rose-700";
+                fx.innerText = q.ex;
+            }
+
+            document.getElementById('nextBtn').classList.remove('hidden');
+            if (currentIdx === quizItems.length - 1) {
+                document.getElementById('nextBtn').innerText = "查看最後積分";
+                document.getElementById('nextBtn').className = "bg-indigo-600 text-white px-14 py-4 rounded-2xl font-black text-xl hover:bg-indigo-700 shadow-xl";
+            }
+        }
+
+        document.getElementById('nextBtn').onclick = () => {
+            currentIdx++;
+            if (currentIdx < quizItems.length) render();
+            else toggleModal('scoreModal', true);
+        };
+
+        window.onload = () => {
+            initQuiz();
+            loadVoices();
+            updateQuick();
+        };
+    </script>
+</body>
+</html>
